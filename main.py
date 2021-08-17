@@ -29,19 +29,61 @@ class chip8:
         opcode = self.decode()
 
         if opcode == 0x0000:
+            print("Warning: 0x0000 instruction")
             pass
         elif opcode == 0x00E0:
             self.display = [0] * 64 * 32
             self.paint()
+        elif opcode == 0x00EE:
+            self.pc = self.stack.pop()
         elif opcode & 0xF000 == 0x1000:
             self.pc = opcode & 0x0FFF
-        elif opcode & 0xF000 == 0x6000:  # 6VXX
+        elif opcode & 0xF000 == 0x2000:
+            self.stack.append(self.pc)
+            self.pc = opcode & 0x0FFF
+        elif opcode & 0xF000 == 0x3000:
+            if opcode & 0x00FF == self.registers[opcode & 0x0F00 >> 8]:
+                self.pc += 2
+        elif opcode & 0xF000 == 0x4000:
+            if opcode & 0x00FF != self.registers[opcode & 0x0F00 >> 8]:
+                self.pc += 2
+        elif opcode & 0xF00F == 0x5000:
+            if self.registers[opcode & 0x0F00 >> 8] == self.registers[opcode & 0x00F0 >> 4]:
+                self.pc += 2
+        elif opcode & 0xF000 == 0x6000:
             self.registers[(opcode & 0x0F00) >> 8] = opcode & 0x00FF
-        elif opcode & 0xF000 == 0x7000:  # 6VXX
+        elif opcode & 0xF000 == 0x7000:
             self.registers[(opcode & 0x0F00) >> 8] += opcode & 0x00FF
-        elif opcode & 0xF000 == 0xA000:  # 6VXX
+        elif opcode & 0xF00F == 0x8000:
+            self.registers[(opcode & 0x0F00) >> 8] = self.registers[(opcode & 0x00F0) >> 4]
+        elif opcode & 0xF00F == 0x8001:
+            self.registers[(opcode & 0x0F00) >> 8] |= self.registers[(opcode & 0x00F0) >> 4]
+        elif opcode & 0xF00F == 0x8002:
+            self.registers[(opcode & 0x0F00) >> 8] &= self.registers[(opcode & 0x00F0) >> 4]
+        elif opcode & 0xF00F == 0x8003:
+            self.registers[(opcode & 0x0F00) >> 8] ^= self.registers[(opcode & 0x00F0) >> 4]
+        elif opcode & 0xF00F == 0x8004:
+            sum = self.registers[(opcode & 0x0F00)>> 8] + self.registers[(opcode & 0x00F0) >> 4]
+            if sum > 0xFF:
+                self.registers[0xF] = 1
+                sum %= 0xFF
+            else:
+                self.registers[0xF] = 0
+            self.registers[(opcode & 0x0F00) >> 8] = sum
+        elif opcode & 0xF00F == 0x8005:
+            sum = self.registers[(opcode & 0x0F00)>> 8] - self.registers[(opcode & 0x00F0) >> 4]
+            if sum < 0:
+                self.registers[0xF] = 1
+                sum += 0xF
+            else:
+                self.registers[0xF] = 0
+            self.registers[(opcode & 0x0F00) >> 8] = sum
+        elif opcode & 0xF00F == 0x9000:
+            if self.registers[opcode & 0x0F00 >> 8] != self.registers[opcode & 0x00F0 >> 4]:
+                self.pc += 2
+        elif opcode & 0xF000 == 0xA000:
             self.i = opcode & 0x0FFF
-        elif opcode & 0xF000 == 0xD000:  # 6VXX
+        elif opcode & 0xF000 == 0xD000:
             x = self.registers[(opcode & 0x0F00) >> 8]
             y = self.registers[(opcode & 0x00F0) >> 4]
             n = opcode & 0x000F
@@ -91,7 +133,7 @@ def main():
     c8 = chip8(sys.argv[1])
     while True:
         c8.step()
-        time.sleep(0.1)
+        time.sleep(0.05)
 
 
 if __name__ == '__main__':
