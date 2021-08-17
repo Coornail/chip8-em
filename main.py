@@ -42,13 +42,13 @@ class chip8:
             self.stack.append(self.pc)
             self.pc = opcode & 0x0FFF
         elif opcode & 0xF000 == 0x3000:
-            if opcode & 0x00FF == self.registers[opcode & 0x0F00 >> 8]:
+            if opcode & 0x00FF == self.registers[(opcode & 0x0F00) >> 8]:
                 self.pc += 2
         elif opcode & 0xF000 == 0x4000:
-            if opcode & 0x00FF != self.registers[opcode & 0x0F00 >> 8]:
+            if opcode & 0x00FF != self.registers[(opcode & 0x0F00) >> 8]:
                 self.pc += 2
         elif opcode & 0xF00F == 0x5000:
-            if self.registers[opcode & 0x0F00 >> 8] == self.registers[opcode & 0x00F0 >> 4]:
+            if self.registers[(opcode & 0x0F00) >> 8] == self.registers[(opcode & 0x00F0) >> 4]:
                 self.pc += 2
         elif opcode & 0xF000 == 0x6000:
             self.registers[(opcode & 0x0F00) >> 8] = opcode & 0x00FF
