@@ -1,4 +1,5 @@
 import time
+import sys
 
 
 class chip8:
@@ -85,7 +86,11 @@ class chip8:
 
 
 def main():
-    c8 = chip8('roms/IBM Logo.ch8')
+    if len(sys.argv) < 2:
+        print("Usage: main.py <rom>")
+        sys.exit(1)
+
+    c8 = chip8(sys.argv[1])
     while True:
         c8.step()
         time.sleep(0.1)
