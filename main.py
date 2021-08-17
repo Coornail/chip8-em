@@ -1,8 +1,9 @@
+import time
 
 class chip8:
     memory = [0] * 4096
     display = [0] * 64 * 32
-    pc = 0
+    pc = 512
     i = 0
     stack = []
     delay_timer = 0
@@ -14,50 +15,76 @@ class chip8:
 
     def load_rom(self, rom):
         with open(rom, 'rb') as f:
-            self.memory = f.read()
+            rm = f.read()
+            for i in range(len(rm)):
+                self.memory[512+i] = rm[i]
 
     def run(self):
         while True:
             self.step()
 
     def step(self):
-        self.asm()
-        opcode, operands = self.decode()
+        opcode = self.decode()
 
-        if opcode == 0x0010:
-            self.pc = operands
+        hex_opcode = hex(opcode)
 
-        self.pc = (self.pc + 1 % 4096)
+        if opcode == 0x0000:
+            pass
+        elif opcode == 0x00E0:
+            self.paint()
+        elif hex_opcode[2] == 'a':  # aXXX
+            self.i = opcode & 0x0FFF
+        elif hex_opcode[2] == '6':  # 6XXX
+            self.registers[(opcode & 0x0F00) >> 8] = opcode & 0x00FF
+        elif hex_opcode[2] == 'd':  # DXYN
+            x = (opcode & 0x0F00) >> 8
+            y = (opcode & 0x00F0) >> 4
+            n = opcode & 0x000F
+            
+            self.registers[0xF] = 0
+            for y_line in range(0, n):
+                pixel = self.memory[self.i + y_line]
+                for x_line in range(0, 8):
+                    if (pixel & (0x80 >> x_line)) != 0:
+                        if self.display[(x + x_line + (y + y_line * 64))] == 1:
+                            self.registers[0xF] = 1
+                        self.display[(x + x_line + (y + y_line * 64))] ^= 1
+
+            self.paint()
+
+            return
+        else:
+            print("Unknown opcode: " + self.asm())
+
+        self.pc = (self.pc + 2 % 4096)
 
     def decode(self):
-        nh = self.memory[self.pc] & 0x0F
-        nl = self.memory[self.pc] >> 4 & 0x0F
-        return (nh, nl)
+        return self.memory[self.pc] << 8 | self.memory[self.pc + 1] 
 
     def __str__(self) -> str:
-        return '[pc: {0}]'.format(self.pc)
+        return 'inst: {0} [pc: {1}]\nmemory: {2}'.format(self.asm(), self.pc, self.memory)
 
     def asm(self):
-        nh, nl = self.decode()
-        print("[" + hex(nh) + " " + hex(nl) + "]")
+        return "[" + hex(self.memory[self.pc]) + " " + hex(self.memory[self.pc+1]) + "]"
 
     def paint(self):
         # Clear screen
         print(chr(27) + "[2J")
 
+        print(" " + "_"*64)
         for y in range(0, 32):
             print('|', end='')
             for x in range(0, 64):
-                print(' ' if self.display[y * 64 + x] == 0 else '#', end='')
+                print(' ' if self.display[y * 64 + x] == 0 else '█', end='')
             print('|')
+        print(" " + "_"*64)
 
 
 def main():
-    c8 = chip8('roms/test_opcode.ch8')
-    c8.step()
-    c8.step()
-    print(c8)
-    pass
+    c8 = chip8('roms/IBM Logo.ch8')
+    while True:
+        c8.step()
+        time.sleep(0.1)
 
 
 if __name__ == '__main__':
