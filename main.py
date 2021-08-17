@@ -31,14 +31,15 @@ class chip8:
         if opcode == 0x0000:
             pass
         elif opcode == 0x00E0:
+            self.display = [0] * 64 * 32
             self.paint()
         elif hex_opcode[2] == 'a':  # aXXX
             self.i = opcode & 0x0FFF
         elif hex_opcode[2] == '6':  # 6XXX
             self.registers[(opcode & 0x0F00) >> 8] = opcode & 0x00FF
         elif hex_opcode[2] == 'd':  # DXYN
-            x = (opcode & 0x0F00) >> 8
-            y = (opcode & 0x00F0) >> 4
+            x = self.registers[(opcode & 0x0F00) >> 8]
+            y = self.registers[(opcode & 0x00F0) >> 4]
             n = opcode & 0x000F
             
             self.registers[0xF] = 0
