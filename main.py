@@ -28,22 +28,20 @@ class chip8:
     def step(self):
         opcode = self.decode()
 
-        hex_opcode = hex(opcode)
-
         if opcode == 0x0000:
             pass
         elif opcode == 0x00E0:
             self.display = [0] * 64 * 32
             self.paint()
-        elif hex_opcode[2] == '1':
+        elif opcode & 0xF000 == 0x1000:
             self.pc = opcode & 0x0FFF
-        elif hex_opcode[2] == '6':  # 6XXX
+        elif opcode & 0xF000 == 0x6000:  # 6VXX
             self.registers[(opcode & 0x0F00) >> 8] = opcode & 0x00FF
-        elif hex_opcode[2] == '7':
+        elif opcode & 0xF000 == 0x7000:  # 6VXX
             self.registers[(opcode & 0x0F00) >> 8] += opcode & 0x00FF
-        elif hex_opcode[2] == 'a':  # aXXX
+        elif opcode & 0xF000 == 0xA000:  # 6VXX
             self.i = opcode & 0x0FFF
-        elif hex_opcode[2] == 'd':  # DXYN
+        elif opcode & 0xF000 == 0xD000:  # 6VXX
             x = self.registers[(opcode & 0x0F00) >> 8]
             y = self.registers[(opcode & 0x00F0) >> 4]
             n = opcode & 0x000F
