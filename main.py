@@ -53,7 +53,10 @@ class chip8:
         elif opcode & 0xF000 == 0x6000:
             self.registers[(opcode & 0x0F00) >> 8] = opcode & 0x00FF
         elif opcode & 0xF000 == 0x7000:
-            self.registers[(opcode & 0x0F00) >> 8] += opcode & 0x00FF
+            target = (opcode & 0x0F00) >> 8
+            self.registers[target] += opcode & 0x00FF
+            if self.registers[target] > 255:
+                self.registers[target] = self.registers[target] - 256
         elif opcode & 0xF00F == 0x8000:
             self.registers[(opcode & 0x0F00) >>
                            8] = self.registers[(opcode & 0x00F0) >> 4]
