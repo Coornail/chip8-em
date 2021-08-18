@@ -1,5 +1,6 @@
 import time
 import sys
+import random
 
 
 class chip8:
@@ -82,11 +83,15 @@ class chip8:
             sum = self.registers[(opcode & 0x0F00) >> 8] - \
                 self.registers[(opcode & 0x00F0) >> 4]
             if sum < 0:
-                self.registers[0xF] = 1
-                sum += 0xF
-            else:
                 self.registers[0xF] = 0
+                sum += 0xFF
+            else:
+                self.registers[0xF] = 1
             self.registers[(opcode & 0x0F00) >> 8] = sum
+        elif opcode & 0xF00F == 0x800E:
+            most_significant = self.registers[(opcode & 0x0F00) >> 8] & 0xF0
+            self.registers[(opcode & 0x0F00) >> 8] = self.registers[(opcode & 0x00F0) >> 4] << 1
+            self.registers[0xF] = most_significant
         elif opcode & 0xF00F == 0x9000:
             if self.registers[(opcode & 0x0F00) >> 8] != self.registers[(opcode & 0x00F0) >> 4]:
                 self.pc += 2
@@ -94,6 +99,8 @@ class chip8:
             self.i = opcode & 0x0FFF
         elif opcode & 0xF000 == 0xB000:
             self.pc = opcode & 0x0FFF + self.registers[0x0]
+        elif opcode & 0xF000 == 0xC000:
+            self.registers[0x0F00 >> 8] = random.randint(0, 255) & (opcode & 0x00FF)
         elif opcode & 0xF000 == 0xD000:
             x = self.registers[(opcode & 0x0F00) >> 8]
             y = self.registers[(opcode & 0x00F0) >> 4]
@@ -109,8 +116,19 @@ class chip8:
                         self.display[x + x_line + ((y + y_line) * 64)] ^= 1
 
             self.paint()
+
+        elif opcode & 0xF0FF == 0xF01E:
+            self.i += self.registers[opcode & 0x0F00 >> 8]
+        elif opcode & 0xF0FF == 0xF055:
+            for i in range(16):
+                self.memory[self.i + i] = self.registers[i]
+        elif opcode & 0xF0FF == 0xF065:
+            for i in range(16):
+                self.registers[i] = self.i + i
+            self.i += 16 + 1
         else:
             print("Unknown opcode: " + self.asm())
+            # exit()
 
         self.pc = (self.pc + 2 % 4096)
 
