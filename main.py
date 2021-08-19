@@ -26,6 +26,15 @@ class chip8:
         while True:
             self.step()
 
+    def getX(self, opcode):
+        return (opcode & 0x0F00) >> 8
+
+    def getXXX(self, opcode):
+        return opcode & 0x0FFF
+
+    def getY(self, opcode):
+        return (opcode & 0x00F0) >> 4
+
     def step(self):
         opcode = self.decode()
 
@@ -38,78 +47,69 @@ class chip8:
         elif opcode == 0x00EE:
             self.pc = self.stack.pop()
         elif opcode & 0xF000 == 0x1000:
-            self.pc = opcode & 0x0FFF
+            self.pc = self.getXXX(opcode)
         elif opcode & 0xF000 == 0x2000:
             self.stack.append(self.pc)
-            self.pc = opcode & 0x0FFF
+            self.pc = self.getXXX(opcode)
         elif opcode & 0xF000 == 0x3000:
-            if opcode & 0x00FF == self.registers[(opcode & 0x0F00) >> 8]:
+            if opcode & 0x00FF == self.registers[self.getX(opcode)]:
                 self.pc += 2
         elif opcode & 0xF000 == 0x4000:
-            if opcode & 0x00FF != self.registers[(opcode & 0x0F00) >> 8]:
+            if opcode & 0x00FF != self.registers[self.getX(opcode)]:
                 self.pc += 2
         elif opcode & 0xF00F == 0x5000:
-            if self.registers[(opcode & 0x0F00) >> 8] == self.registers[(opcode & 0x00F0) >> 4]:
+            if self.registers[self.getX(opcode)] == self.registers[self.getY(opcode)]:
                 self.pc += 2
         elif opcode & 0xF000 == 0x6000:
-            self.registers[(opcode & 0x0F00) >> 8] = opcode & 0x00FF
+            self.registers[self.getX(opcode)] = opcode & 0x00FF
         elif opcode & 0xF000 == 0x7000:
-            target = (opcode & 0x0F00) >> 8
+            target = self.getX(opcode)
             self.registers[target] += opcode & 0x00FF
             if self.registers[target] > 255:
                 self.registers[target] = self.registers[target] - 256
         elif opcode & 0xF00F == 0x8000:
-            self.registers[(opcode & 0x0F00) >>
-                           8] = self.registers[(opcode & 0x00F0) >> 4]
+            self.registers[self.getX(opcode)] = self.registers[self.getY(opcode)]
         elif opcode & 0xF00F == 0x8001:
-            self.registers[(opcode & 0x0F00) >>
-                           8] |= self.registers[(opcode & 0x00F0) >> 4]
+            self.registers[self.getX(opcode)] |= self.registers[self.getY(opcode)]
         elif opcode & 0xF00F == 0x8002:
-            self.registers[(opcode & 0x0F00) >>
-                           8] &= self.registers[(opcode & 0x00F0) >> 4]
+            self.registers[self.getX(opcode)] &= self.registers[self.getY(opcode)]
         elif opcode & 0xF00F == 0x8003:
-            self.registers[(opcode & 0x0F00) >>
-                           8] ^= self.registers[(opcode & 0x00F0) >> 4]
+            self.registers[self.getX(opcode)] ^= self.registers[self.getY(opcode)]
         elif opcode & 0xF00F == 0x8004:
-            sum = self.registers[(opcode & 0x0F00) >> 8] + \
-                self.registers[(opcode & 0x00F0) >> 4]
+            sum = self.registers[self.getX(opcode)] + self.registers[self.getY(opcode)]
             if sum > 1 << 8:
                 self.registers[0xF] = 1
                 sum %= 1 << 8
             else:
                 self.registers[0xF] = 0
-            self.registers[(opcode & 0x0F00) >> 8] = sum
+            self.registers[self.getX(opcode)] = sum
         elif opcode & 0xF00F == 0x8005:
-            sum = self.registers[(opcode & 0x0F00) >> 8] - \
-                self.registers[(opcode & 0x00F0) >> 4]
+            sum = self.registers[self.getX(opcode)] - self.registers[self.getY(opcode)]
             if sum < 0:
                 self.registers[0xF] = 0
             else:
                 self.registers[0xF] = 1
-            self.registers[(opcode & 0x0F00) >> 8] = sum
+            self.registers[self.getX(opcode)] = sum
         elif opcode & 0xF00F == 0x8006:
-            least_significant = self.registers[(opcode & 0x0F00) >> 8] & 0x000F
-            self.registers[(opcode & 0x0F00) >> 8] = self.registers[(
-                opcode & 0x00F0) >> 4] >> 1
+            least_significant = self.registers[self.getX(opcode)] & 0x000F
+            self.registers[self.getX(opcode)] = self.registers[self.getY(opcode)] >> 1
             self.registers[0xF] = least_significant
         elif opcode & 0xF00F == 0x800E:
-            most_significant = self.registers[(opcode & 0x0F00) >> 8] & 0xF000
-            self.registers[(opcode & 0x0F00) >> 8] = self.registers[(
-                opcode & 0x00F0) >> 4] << 1
+            most_significant = self.registers[self.getX(opcode)] & 0xF000
+            self.registers[self.getX(opcode)] = self.registers[self.getY(opcode)] << 1
             self.registers[0xF] = most_significant
         elif opcode & 0xF00F == 0x9000:
-            if self.registers[(opcode & 0x0F00) >> 8] != self.registers[(opcode & 0x00F0) >> 4]:
+            if self.registers[self.getX(opcode)] != self.registers[self.getY(opcode)]:
                 self.pc += 2
         elif opcode & 0xF000 == 0xA000:
             self.i = opcode & 0x0FFF
         elif opcode & 0xF000 == 0xB000:
             self.pc = opcode & 0x0FFF + self.registers[0x0]
         elif opcode & 0xF000 == 0xC000:
-            self.registers[0x0F00 >> 8] = random.randint(
-                0, 255) & (opcode & 0x00FF)
+            self.registers[self.getX(opcode)] = random.randint(0, 255) & (opcode & 0x00FF)
         elif opcode & 0xF000 == 0xD000:
-            x = self.registers[(opcode & 0x0F00) >> 8]
-            y = self.registers[(opcode & 0x00F0) >> 4]
+            x = self.registers[self.getX(opcode)]
+            y = self.registers[self.getY(opcode)]
             n = opcode & 0x000F
 
             self.registers[0xF] = 0
