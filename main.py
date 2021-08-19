@@ -94,6 +94,14 @@ class chip8:
             least_significant = self.registers[self.getX(opcode)] & 0x000F
             self.registers[self.getX(opcode)] = self.registers[self.getY(opcode)] >> 1
             self.registers[0xF] = least_significant
+        elif opcode & 0xF00F == 0x8007:
+            sum = self.registers[self.getY(opcode)] - self.registers[self.getX(opcode)]
+            if sum < 0:
+                self.registers[0xF] = 0
+            else:
+                self.registers[0xF] = 1
+            self.registers[self.getX(opcode)] = sum
+            pass
         elif opcode & 0xF00F == 0x800E:
             most_significant = self.registers[self.getX(opcode)] & 0xF000
             self.registers[self.getX(opcode)] = self.registers[self.getY(opcode)] << 1
@@ -101,6 +109,8 @@ class chip8:
         elif opcode & 0xF00F == 0x9000:
             if self.registers[self.getX(opcode)] != self.registers[self.getY(opcode)]:
                 self.pc += 2
+        elif opcode & 0xF0FF == 0xF029:
+            self.i = self.registers[self.getX(opcode)] * 5
         elif opcode & 0xF000 == 0xA000:
             self.i = opcode & 0x0FFF
         elif opcode & 0xF000 == 0xB000:
@@ -124,12 +134,16 @@ class chip8:
             self.paint()
 
         elif opcode & 0xF0FF == 0xF01E:
-            self.i += self.registers[opcode & 0x0F00 >> 8]
+            self.i += self.registers[self.getX(opcode)]
+        elif opcode & 0xF0FF == 0xF033:
+            self.memory[self.i] = self.registers[self.getX(opcode)] / 100
+            self.memory[self.i + 1] = (self.registers[self.getX(opcode)] / 10) % 10; 
+            self.memory[self.i + 2] = self.registers[self.getX(opcode)] % 10; 
         elif opcode & 0xF0FF == 0xF055:
-            for i in range(self.registers[0x0F00 >> 8]):
+            for i in range(self.getX(opcode)):
                 self.memory[self.i + i] = self.registers[i]
         elif opcode & 0xF0FF == 0xF065:
-            for i in range(self.registers[0x0F00 >> 8]):
+            for i in range(self.getX(opcode)):
                 self.registers[i] = self.i + i
             self.i += 16 + 1
         else:
