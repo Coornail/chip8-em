@@ -94,6 +94,7 @@ class chip8:
             sum = self.registers[self.getX(opcode)] - self.registers[self.getY(opcode)]
             if sum < 0:
                 self.registers[0xF] = 0
+                sum = sum + 256
             else:
                 self.registers[0xF] = 1
             self.registers[self.getX(opcode)] = sum
