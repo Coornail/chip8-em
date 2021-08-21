@@ -1,6 +1,7 @@
 import time
 import sys
 import random
+import math
 
 
 class chip8:
@@ -42,19 +43,25 @@ class chip8:
             print("Warning: 0x0000 instruction")
             pass
         elif opcode == 0x00E0:
+            """Clear the screen"""
             self.display = [0] * 64 * 32
             self.paint()
         elif opcode == 0x00EE:
+            """Return from a subroutine"""
             self.pc = self.stack.pop()
         elif opcode & 0xF000 == 0x1000:
-            self.pc = self.getXXX(opcode)
+            """Jump to address NNN"""
+            self.pc = self.getXXX(opcode) - 2
         elif opcode & 0xF000 == 0x2000:
+            """Execute subroutine starting at address NNN"""
             self.stack.append(self.pc)
-            self.pc = self.getXXX(opcode)
+            self.pc = self.getXXX(opcode) - 2
         elif opcode & 0xF000 == 0x3000:
+            """Skip the following instruction if the value of register VX equals NN"""
             if opcode & 0x00FF == self.registers[self.getX(opcode)]:
                 self.pc += 2
         elif opcode & 0xF000 == 0x4000:
+            """Skip the following instruction if the value of register VX is not equal to NN"""
             if opcode & 0x00FF != self.registers[self.getX(opcode)]:
                 self.pc += 2
         elif opcode & 0xF00F == 0x5000:
@@ -114,7 +121,7 @@ class chip8:
         elif opcode & 0xF000 == 0xA000:
             self.i = opcode & 0x0FFF
         elif opcode & 0xF000 == 0xB000:
-            self.pc = opcode & 0x0FFF + self.registers[0x0]
+            self.pc = self.getXXX(opcode) + self.registers[0x0]
         elif opcode & 0xF000 == 0xC000:
             self.registers[self.getX(opcode)] = random.randint(0, 255) & (opcode & 0x00FF)
         elif opcode & 0xF000 == 0xD000:
@@ -136,8 +143,8 @@ class chip8:
         elif opcode & 0xF0FF == 0xF01E:
             self.i += self.registers[self.getX(opcode)]
         elif opcode & 0xF0FF == 0xF033:
-            self.memory[self.i] = self.registers[self.getX(opcode)] / 100
-            self.memory[self.i + 1] = (self.registers[self.getX(opcode)] / 10) % 10; 
+            self.memory[self.i] = math.floor(self.registers[self.getX(opcode)] / 100)
+            self.memory[self.i + 1] = math.floor(self.registers[self.getX(opcode)] / 10) % 10; 
             self.memory[self.i + 2] = self.registers[self.getX(opcode)] % 10; 
         elif opcode & 0xF0FF == 0xF055:
             for i in range(self.getX(opcode)):
@@ -150,7 +157,8 @@ class chip8:
             print("Unknown opcode: " + self.asm())
             # exit()
 
-        self.pc = (self.pc + 2 % 4096)
+        self.pc = self.pc + 2
+
 
     def decode(self):
         return self.memory[self.pc] << 8 | self.memory[self.pc + 1]
@@ -182,4 +190,4 @@ if __name__ == '__main__':
     c8 = chip8(sys.argv[1])
     while True:
         c8.step()
-        time.sleep(0.05)
+        time.sleep(0.01)
