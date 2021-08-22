@@ -2,6 +2,7 @@ import time
 import sys
 import random
 import math
+import curses
 
 
 class chip8:
@@ -13,8 +14,15 @@ class chip8:
     delay_timer = 0
     sound_timer = 0
     registers = [0] * 16
+    stdscr = None
+
+    debug = []
 
     def __init__(self, rom):
+        self.stdscr = curses.initscr()
+        curses.noecho()
+        curses.cbreak()
+        self.stdscr.keypad(True)
         self.load_rom(rom)
 
     def load_rom(self, rom):
@@ -153,6 +161,8 @@ class chip8:
 
             self.paint()
 
+        # elif opcode & 0xF0FF == 0xE0A1:
+            # self.debug.append("Implement me: 0xEXA1")
         elif opcode & 0xF0FF == 0xF01E:
             self.i += self.registers[self.getX(opcode)]
         elif opcode & 0xF0FF == 0xF033:
@@ -168,9 +178,10 @@ class chip8:
             for i in range(self.getX(opcode) + 1):
                 self.registers[i] = self.memory[self.i + i]
             self.i += self.getX(opcode) + 1
+        # elif opcode & 0xF0FF == 0xF00A:
+            # self.debug.append("Implement me: 0xFXYA")
         else:
-            print("Unknown opcode: " + self.asm())
-            # exit()
+            self.debug.append("Unknown opcode: " + self.asm())
 
         self.pc = self.pc + 2
 
@@ -184,17 +195,35 @@ class chip8:
         return "[" + hex(self.memory[self.pc]) + " " + hex(self.memory[self.pc+1]) + "]"
 
     def paint(self):
-        # Clear screen
-        buf = chr(27) + "[2J"
-
-        buf += " " + "_"*64 + "\n"
+        buf = ""
         for y in range(0, 32):
-            buf += '|'
             for x in range(0, 64):
                 buf += ' ' if self.display[y * 64 + x] == 0 else '█'
-            buf += "|\n"
-        buf += " " + "_"*64
-        print(buf, flush=True)
+            buf += "\n"
+
+        main_window = self.stdscr.subwin(33, 65, 1, 1)
+        main_window.border(0)
+        main_window.addstr(buf)
+
+        # Draw debug
+        debug_window = self.stdscr.subwin(1, 65)
+
+        debug_scroll = 0
+        if len(self.debug) > 30:
+            debug_scroll = len(self.debug) - 30
+        for i in self.debug[debug_scroll:]:
+            debug_window.addstr(i + "\n")
+
+        # Draw registers
+        registers_window = self.stdscr.subwin(32, 65)
+        registers_window.border(0)
+        for i in range(len(self.registers)):
+            registers_window.addstr(
+                str(i) + ": " + hex(self.registers[i]) + "\t" + str(self.registers[i]) + "\n")
+
+        registers_window.addstr("i: " + str(self.i) + "\n")
+
+        self.stdscr.refresh()
         time.sleep(1/60)
 
 
