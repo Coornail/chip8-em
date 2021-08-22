@@ -42,6 +42,11 @@ class chip8:
         curses.noecho()
         curses.cbreak()
         self.stdscr.keypad(True)
+
+        self.main_window = self.stdscr.subwin(33, 65, 1, 1)
+        self.main_window.nodelay(1)
+        self.main_window.border(0)
+
         self.load_rom(rom)
 
     def load_rom(self, rom):
@@ -223,9 +228,8 @@ class chip8:
                 buf += ' ' if self.display[y * 64 + x] == 0 else '█'
             buf += "\n"
 
-        main_window = self.stdscr.subwin(33, 65, 1, 1)
-        main_window.border(0)
-        main_window.addstr(buf)
+        self.main_window.clear()
+        self.main_window.addstr(buf)
 
         # Draw debug
         debug_window = self.stdscr.subwin(1, 65)
@@ -257,4 +261,3 @@ if __name__ == '__main__':
     c8 = chip8(sys.argv[1])
     while True:
         c8.step()
-        # time.sleep(0.0025)
