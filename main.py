@@ -138,9 +138,10 @@ class chip8:
                 pixel = self.memory[self.i + y_line]
                 for x_line in range(0, 8):
                     if (pixel & (0x80 >> x_line)) != 0:
-                        if self.display[x + x_line + ((y + y_line) * 64)] == 1:
+                        pos = ((x + x_line) % 64) + ((y + y_line) * 64)
+                        if self.display[pos] == 1:
                             self.registers[0xF] = 1
-                        self.display[x + x_line + ((y + y_line) * 64)] ^= 1
+                        self.display[pos] ^= 1
 
             self.paint()
 
