@@ -75,15 +75,20 @@ class chip8:
             if self.registers[target] > 255:
                 self.registers[target] = self.registers[target] - 256
         elif opcode & 0xF00F == 0x8000:
-            self.registers[self.getX(opcode)] = self.registers[self.getY(opcode)]
+            self.registers[self.getX(
+                opcode)] = self.registers[self.getY(opcode)]
         elif opcode & 0xF00F == 0x8001:
-            self.registers[self.getX(opcode)] |= self.registers[self.getY(opcode)]
+            self.registers[self.getX(
+                opcode)] |= self.registers[self.getY(opcode)]
         elif opcode & 0xF00F == 0x8002:
-            self.registers[self.getX(opcode)] &= self.registers[self.getY(opcode)]
+            self.registers[self.getX(
+                opcode)] &= self.registers[self.getY(opcode)]
         elif opcode & 0xF00F == 0x8003:
-            self.registers[self.getX(opcode)] ^= self.registers[self.getY(opcode)]
+            self.registers[self.getX(
+                opcode)] ^= self.registers[self.getY(opcode)]
         elif opcode & 0xF00F == 0x8004:
-            sum = self.registers[self.getX(opcode)] + self.registers[self.getY(opcode)]
+            sum = self.registers[self.getX(
+                opcode)] + self.registers[self.getY(opcode)]
             if sum > 1 << 8:
                 self.registers[0xF] = 1
                 sum %= 1 << 8
@@ -91,7 +96,8 @@ class chip8:
                 self.registers[0xF] = 0
             self.registers[self.getX(opcode)] = sum
         elif opcode & 0xF00F == 0x8005:
-            sum = self.registers[self.getX(opcode)] - self.registers[self.getY(opcode)]
+            sum = self.registers[self.getX(
+                opcode)] - self.registers[self.getY(opcode)]
             if sum < 0:
                 self.registers[0xF] = 0
                 sum = sum + 256
@@ -99,11 +105,12 @@ class chip8:
                 self.registers[0xF] = 1
             self.registers[self.getX(opcode)] = sum
         elif opcode & 0xF00F == 0x8006:
-            least_significant = self.registers[self.getX(opcode)] & 0x000F
-            self.registers[self.getX(opcode)] = self.registers[self.getY(opcode)] >> 1
-            self.registers[0xF] = least_significant
+            x = self.getX(opcode) & 0xFFFF
+            self.registers[0xF] = self.registers[x] & 0x1
+            self.registers[x] = self.registers[x] >> 1
         elif opcode & 0xF00F == 0x8007:
-            sum = self.registers[self.getY(opcode)] - self.registers[self.getX(opcode)]
+            sum = self.registers[self.getY(
+                opcode)] - self.registers[self.getX(opcode)]
             if sum < 0:
                 self.registers[0xF] = 0
             else:
@@ -127,7 +134,8 @@ class chip8:
         elif opcode & 0xF000 == 0xB000:
             self.pc = self.getXXX(opcode) + self.registers[0x0]
         elif opcode & 0xF000 == 0xC000:
-            self.registers[self.getX(opcode)] = random.randint(0, 255) & (opcode & 0x00FF)
+            self.registers[self.getX(opcode)] = random.randint(
+                0, 255) & (opcode & 0x00FF)
         elif opcode & 0xF000 == 0xD000:
             x = self.registers[self.getX(opcode)]
             y = self.registers[self.getY(opcode)]
