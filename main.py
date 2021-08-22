@@ -177,15 +177,17 @@ class chip8:
 
     def paint(self):
         # Clear screen
-        print(chr(27) + "[2J")
+        buf = chr(27) + "[2J"
 
-        print(" " + "_"*64)
+        buf += " " + "_"*64 + "\n"
         for y in range(0, 32):
-            print('|', end='')
+            buf += '|'
             for x in range(0, 64):
-                print(' ' if self.display[y * 64 + x] == 0 else '█', end='')
-            print('|')
-        print(" " + "_"*64)
+                buf += ' ' if self.display[y * 64 + x] == 0 else '█'
+            buf += "|\n"
+        buf += " " + "_"*64
+        print(buf, flush=True)
+        time.sleep(1/60)
 
 
 if __name__ == '__main__':
@@ -196,4 +198,4 @@ if __name__ == '__main__':
     c8 = chip8(sys.argv[1])
     while True:
         c8.step()
-        time.sleep(0.01)
+        # time.sleep(0.0025)
