@@ -147,22 +147,23 @@ class chip8:
         elif opcode & 0xF0FF == 0xF01E:
             self.i += self.registers[self.getX(opcode)]
         elif opcode & 0xF0FF == 0xF033:
-            self.memory[self.i] = math.floor(self.registers[self.getX(opcode)] / 100)
-            self.memory[self.i + 1] = math.floor(self.registers[self.getX(opcode)] / 10) % 10; 
-            self.memory[self.i + 2] = self.registers[self.getX(opcode)] % 10; 
+            num = self.registers[self.getX(opcode)]
+            self.memory[self.i] = math.floor(num / 100)
+            self.memory[self.i + 1] = math.floor(num / 10) % 10
+            self.memory[self.i + 2] = num % 10
         elif opcode & 0xF0FF == 0xF055:
-            for i in range(self.getX(opcode)):
+            for i in range(self.getX(opcode) + 1):
                 self.memory[self.i + i] = self.registers[i]
+            self.i += self.getX(opcode) + 1
         elif opcode & 0xF0FF == 0xF065:
-            for i in range(self.getX(opcode)):
-                self.registers[i] = self.i + i
-            self.i += 16 + 1
+            for i in range(self.getX(opcode) + 1):
+                self.registers[i] = self.memory[self.i + i]
+            self.i += self.getX(opcode) + 1
         else:
             print("Unknown opcode: " + self.asm())
             # exit()
 
         self.pc = self.pc + 2
-
 
     def decode(self):
         return self.memory[self.pc] << 8 | self.memory[self.pc + 1]
