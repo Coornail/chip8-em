@@ -111,8 +111,11 @@ class chip8:
             self.registers[self.getX(opcode)] = sum
             pass
         elif opcode & 0xF00F == 0x800E:
-            most_significant = self.registers[self.getX(opcode)] & 0xF000
-            self.registers[self.getX(opcode)] = self.registers[self.getY(opcode)] << 1
+            x = self.getX(opcode)
+            most_significant = self.registers[x] & 0x1000
+            self.registers[x] = self.registers[x] << 1
+            if self.registers[x] > 255:
+                self.registers[x] -= 256
             self.registers[0xF] = most_significant
         elif opcode & 0xF00F == 0x9000:
             if self.registers[self.getX(opcode)] != self.registers[self.getY(opcode)]:
