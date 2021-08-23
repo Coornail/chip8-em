@@ -190,7 +190,7 @@ class chip8:
                 for x_line in range(0, 8):
                     if (pixel & (0x80 >> x_line)) != 0:
                         pos = ((x + x_line) % 64) + \
-                            ((y + y_line) * 64) % (16*32)
+                            ((y + y_line) * 64) % (64*32)
                         if self.display[pos] == 1:
                             self.registers[0xF] = 1
                         self.display[pos] ^= 1
