@@ -24,6 +24,7 @@ font_faces = [
     0xF0, 0x80, 0xF0, 0x80, 0x80   # F
 ]
 
+
 class chip8:
     memory = [0] * 4096
     display = [0] * 64 * 32
@@ -35,6 +36,13 @@ class chip8:
     registers = [0] * 16
     stdscr = None
 
+    keymap = {
+        49: 0, 50: 1, 51: 2, 52: 3,
+        113: 4, 119: 5, 101: 6, 114: 7,
+        97: 8, 115: 9, 100: 10, 102: 11,
+        122: 12, 104: 13, 120: 14, 99: 15,
+    }
+
     debug = []
 
     def __init__(self, rom):
@@ -43,9 +51,9 @@ class chip8:
         curses.cbreak()
         self.stdscr.keypad(True)
 
-        self.main_window = self.stdscr.subwin(33, 65, 1, 1)
+        self.main_window = self.stdscr.subwin(33, 65, 0, 0)
         self.main_window.nodelay(1)
-        self.main_window.border(0)
+        self.main_window.border(1)
 
         self.load_rom(rom)
 
@@ -94,14 +102,14 @@ class chip8:
         elif opcode & 0xF000 == 0x3000:
             """Skip the following instruction if the value of register VX equals NN"""
             if opcode & 0x00FF == self.registers[self.getX(opcode)]:
-                self.pc += 2
+                self.pc += 2 & 0xFFF
         elif opcode & 0xF000 == 0x4000:
             """Skip the following instruction if the value of register VX is not equal to NN"""
             if opcode & 0x00FF != self.registers[self.getX(opcode)]:
-                self.pc += 2
+                self.pc += 2 & 0xFFF
         elif opcode & 0xF00F == 0x5000:
             if self.registers[self.getX(opcode)] == self.registers[self.getY(opcode)]:
-                self.pc += 2
+                self.pc += 2 & 0xFFF
         elif opcode & 0xF000 == 0x6000:
             self.registers[self.getX(opcode)] = opcode & 0x00FF
         elif opcode & 0xF000 == 0x7000:
@@ -161,7 +169,7 @@ class chip8:
             self.registers[0xF] = most_significant
         elif opcode & 0xF00F == 0x9000:
             if self.registers[self.getX(opcode)] != self.registers[self.getY(opcode)]:
-                self.pc += 2
+                self.pc += 2 & 0xFFF
         elif opcode & 0xF0FF == 0xF029:
             self.i = self.registers[self.getX(opcode)] * 5
         elif opcode & 0xF000 == 0xA000:
@@ -187,9 +195,10 @@ class chip8:
                         self.display[pos] ^= 1
 
             self.paint()
-
-        # elif opcode & 0xF0FF == 0xE0A1:
-            # self.debug.append("Implement me: 0xEXA1")
+        elif opcode & 0xF0FF == 0xE0A1:
+            ch = self.main_window.getch()
+            if ch == -1 or ch not in self.keymap or self.registers[self.getX(opcode)] != self.keymap[ch]:
+                self.pc += 2 & 0xFFF
         elif opcode & 0xF0FF == 0xF01E:
             self.i += self.registers[self.getX(opcode)]
         elif opcode & 0xF0FF == 0xF033:
@@ -205,12 +214,13 @@ class chip8:
             for i in range(self.getX(opcode) + 1):
                 self.registers[i] = self.memory[self.i + i]
             self.i += self.getX(opcode) + 1
-        # elif opcode & 0xF0FF == 0xF00A:
-            # self.debug.append("Implement me: 0xFXYA")
+        elif opcode & 0xF0FF == 0xF00A:
+            while self.main_window.getch() == -1:
+                pass
         else:
             self.debug.append("Unknown opcode: " + self.asm())
 
-        self.pc = self.pc + 2
+        self.pc += 2 & 0xFFF
 
     def decode(self):
         return self.memory[self.pc] << 8 | self.memory[self.pc + 1]
@@ -222,14 +232,11 @@ class chip8:
         return "[" + hex(self.memory[self.pc]) + " " + hex(self.memory[self.pc+1]) + "]"
 
     def paint(self):
-        buf = ""
+        self.main_window.clear()
         for y in range(0, 32):
             for x in range(0, 64):
-                buf += ' ' if self.display[y * 64 + x] == 0 else '█'
-            buf += "\n"
-
-        self.main_window.clear()
-        self.main_window.addstr(buf)
+                self.main_window.addch(
+                    y, x, '█' if self.display[x + y * 64] else ' ')
 
         # Draw debug
         debug_window = self.stdscr.subwin(1, 65)
@@ -245,7 +252,7 @@ class chip8:
         registers_window.border(0)
         for i in range(len(self.registers)):
             registers_window.addstr(
-                str(i) + ": " + hex(self.registers[i]) + "\t" + str(self.registers[i]) + "\n")
+                str(i) + ":\t" + hex(self.registers[i]) + "\t" + str(self.registers[i]) + "\n")
 
         registers_window.addstr("i: " + str(self.i) + "\n")
 
