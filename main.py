@@ -1,5 +1,6 @@
 import time
 import sys
+import signal
 import random
 import math
 import curses
@@ -265,6 +266,12 @@ if __name__ == '__main__':
     if len(sys.argv) < 2:
         print("Usage: main.py <rom>")
         sys.exit(1)
+
+    def signal_handler(sig, frame):
+        curses.endwin()
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, signal_handler)
 
     c8 = chip8(sys.argv[1])
     while True:
